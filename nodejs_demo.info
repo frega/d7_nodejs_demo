@@ -1,0 +1,9 @@
+name = nodejs_demo
+description = nodejs.module demo
+core = 7.x
+package = Nodejs
+
+dependencies[] = rules
+dependencies[] = nodejs
+dependencies[] = nodejs_notify
+dependencies[] = nodejs_watchdog

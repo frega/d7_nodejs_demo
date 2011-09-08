@@ -1,0 +1,66 @@
+<?php
+/**
+ * Implements hook_nodejs_handlers_info().
+ *
+ * -> ADD NODEJS Callback handlers ...
+ */
+function nodejs_demo_nodejs_handlers_info() {
+  return array(
+    drupal_get_path('module', 'nodejs_demo') . '/nodejs_demo.js',
+  );
+}
+
+/**
+ * Implements hook_nodejs_user_channels().
+ *
+ * -> ANY AUTHENTICATED USER ARE ADDED TO CHANNEL *ONCE* AND ONLY *AT* INITIAL AUTHORISATION!
+ */
+function nodejs_demo_nodejs_user_channels($account) {
+  if ( user_access('administer nodes') ) {
+    return array(
+      'nodejs_demo_broadcast',
+    );
+  } else {
+    return array();
+  }
+}
+
+
+/**
+ * Implements hook_menu(),
+ */
+function nodejs_demo_menu() {
+  return array(
+    'nodejs_demo/dashboard' => array(
+      'access arguments' => array('administer nodes'),
+      'page callback' => 'nodejs_demo_dashboard',
+      'title' => 'Nodejs Demo Dashboard',
+    )
+  );
+}
+
+/**
+ * Page callback for dashboard
+ * @return array render array
+ */
+function nodejs_demo_dashboard() {
+  // load google viz
+  drupal_add_js('https://www.google.com/jsapi', 'external');
+  drupal_add_js('google.load("visualization", "1", {packages: ["corechart"]});', 'inline');
+
+  // send a content channel token
+  nodejs_send_content_channel_token('nodejs_demo_broadcast');
+
+  // load the dblog overview to piggyback (it subscribes to watchdog_dblog)
+  module_load_include('inc', 'dblog', 'dblog.admin');
+  $content = array();
+  $content['nodejs_demo_stream'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div id="nodejs-demo-stream-wrapper" style="width: 400px; height: 300px; border:  1px solid #000;">PLACEHOLDER</div>'
+  );
+  $content += dblog_overview();
+  // remove the filter forms
+  unset($content['dblog_filter_form']);
+  unset($content['dblog_clear_log_form']);
+  return $content;
+}
