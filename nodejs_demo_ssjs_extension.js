@@ -45,7 +45,7 @@ exports.setup = function (config) {
   sendMessageToBackend = config.sendMessageToBackend;
 
 
-  console.log('Setting up nodejs_demo extension');
+  console.log('Setting up nodejs_demo_ssjs_extension');
   setInterval( function() {
     if (!localOptions.extensionActive) {
       return false;
