@@ -1,13 +1,30 @@
 <?php
 /**
+ * Implements hook_permission().
+ * @return array
+ */
+function nodejs_permission() {
+  return array(
+    'view nodejs_demo demo' => array(
+      'title' => t('View the nodejs demo'),
+    ),
+  );
+}
+
+/**
  * Implements hook_nodejs_handlers_info().
  *
  * -> ADD NODEJS Callback handlers ...
  */
 function nodejs_demo_nodejs_handlers_info() {
+  // we don't need this, as our js is explicitly included only on one page ...
+  return array();
+  /*
+  // if we wanted it to handle events on any page ...
   return array(
     drupal_get_path('module', 'nodejs_demo') . '/nodejs_demo.js',
   );
+  */
 }
 
 /**
@@ -16,13 +33,8 @@ function nodejs_demo_nodejs_handlers_info() {
  * -> ANY AUTHENTICATED USER ARE ADDED TO CHANNEL *ONCE* AND ONLY *AT* INITIAL AUTHORISATION!
  */
 function nodejs_demo_nodejs_user_channels($account) {
-  if ( user_access('administer nodes') ) {
-    return array(
-      'nodejs_demo_broadcast',
-    );
-  } else {
-    return array();
-  }
+  // we don't need this - we use tokenChannels
+  return array();
 }
 
 
@@ -32,11 +44,26 @@ function nodejs_demo_nodejs_user_channels($account) {
 function nodejs_demo_menu() {
   return array(
     'nodejs_demo/dashboard' => array(
-      'access arguments' => array('administer nodes'),
+      'access arguments' => array('view nodejs_demo demo'),
       'page callback' => 'nodejs_demo_dashboard',
       'title' => 'Nodejs Demo Dashboard',
+    ),
+    '_/nodejs_demo/chaos' => array(
+      'access arguments' => array('view nodejs_demo demo'),
+      'page callback' => 'nodejs_demo_chaos',
+      'title' => 'Chaos',
     )
   );
+}
+
+function nodejs_demo_chaos($type = 'ajax') {
+  nodejs_enqueue_message(
+    (object) array(
+      'channel' => 'nodejs_demo_chaos',
+      'type' => 'something'
+    )
+  );
+  ajax_deliver('Hello');
 }
 
 /**
@@ -48,16 +75,46 @@ function nodejs_demo_dashboard() {
   drupal_add_js('https://www.google.com/jsapi', 'external');
   drupal_add_js('google.load("visualization", "1", {packages: ["corechart"]});', 'inline');
 
-  // send a content channel token
+  // add this here 
+  drupal_add_js(drupal_get_path('module', 'nodejs_demo') . '/nodejs_demo.js', array('type' => 'file'));
+  
+  // send a content channel token - we would have to check here if the user has access (if it differs from menu)
   nodejs_send_content_channel_token('nodejs_demo_broadcast');
 
   // load the dblog overview to piggyback (it subscribes to watchdog_dblog)
   module_load_include('inc', 'dblog', 'dblog.admin');
   $content = array();
+  // ugly, ugly, ugly 
   $content['nodejs_demo_stream'] = array(
     '#type' => 'markup',
-    '#markup' => '<div id="nodejs-demo-stream-wrapper" style="width: 400px; height: 300px; border:  1px solid #000;">PLACEHOLDER</div>'
+    '#prefix' => '<div id="nodejs-demo-stream-wrapper" style="width: 400px; height: 300px;">',
+    '#markup' => t('Please wait while we load realtime data ...'),
+    '#suffix' => '</div>'
   );
+  $content['nodejs_demo_trigger'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="nodejs-demo-trigger-wrapper">',
+    '#markup' => '<a id="nodejs-demo-trigger" href="#">Create chaos!</a>',
+    '#suffix' => '</div>'
+  );
+
+  // all i want is a little drupal link ...
+  drupal_add_library('system', 'drupal.ajax');
+  drupal_add_library('system', 'jquery.form');
+  $content['nodejs_demo_trigger_drupal'] = array(
+    '#type' => 'link',
+    '#prefix' => '<div id="nodejs-demo-trigger-drupal-wrapper">',
+    '#href' => '_/nodejs_demo/chaos',
+    '#title' => t('Create chaos via drupal'),
+    '#ajax' => array(
+      'callback' => 'nodejs_demo_chaos',
+      'wrapper' => 'ajax-response-goes-here',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+    '#suffix' => '</div>'
+  );
+
   $content += dblog_overview();
   // remove the filter forms
   unset($content['dblog_filter_form']);

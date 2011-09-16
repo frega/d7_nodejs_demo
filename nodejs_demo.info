@@ -7,3 +7,6 @@ dependencies[] = rules
 dependencies[] = nodejs
 dependencies[] = nodejs_notify
 dependencies[] = nodejs_watchdog
+
+; tiny module to provide integration with rules
+dependencies[] = nodejs_rules

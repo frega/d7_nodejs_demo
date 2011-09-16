@@ -34,6 +34,28 @@
     }
   };
 
+
+
+Drupal.behaviors.nodejs_demo = {
+    attach: function (context, settings) {
+      // only once
+      $('#nodejs-demo-trigger', context).click( function() {
+        if (Drupal.Nodejs.socket) {
+          var message = {
+            authToken: Drupal.settings.nodejs.authToken,
+            channel: 'nodejs_demo_chaos',
+            data: {
+              'op': 'reset'
+            },
+            type: 'something'
+          };
+          Drupal.Nodejs.socket.emit('message', message);
+        }
+        return false;
+      });
+    }
+  };
+
 })(jQuery);
 
 
